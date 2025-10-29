@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  postgres:                       # ✅ fixed name (was 'stgres')
+    image: postgres:15
+    container_name: pg-ml
+    environment:                  # ✅ fixed typo (was 'environpoment')
+      - POSTGRES_USER=mluser
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=ml_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:                  # ✅ updated to check correct DB
+      test: ["CMD-SHELL", "pg_isready -U mluser -d ml_db"]
+      interval: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: fastapi-ml
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+volumes:
+  pgdata:
